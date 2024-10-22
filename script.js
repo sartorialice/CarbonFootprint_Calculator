@@ -6,38 +6,34 @@ document.getElementById('footprintForm').addEventListener('submit', function(eve
     const dietType = document.getElementById('dietType').value;
     const energyUsage = parseFloat(document.getElementById('energyUsage').value);
 
-    // Calculate carbon footprint
-    const footprint = calculateCarbonFootprint(milesDriven, dietType, energyUsage);
+    // Prepare the data to send
+    const data = {
+        miles_driven: milesDriven,
+        diet_type: dietType,
+        energy_usage: energyUsage
+    };
 
-    // Display the result
-    document.getElementById('result').textContent = `Your estimated carbon footprint is ${footprint.toFixed(2)} kg CO2 per month.`;
+    // Send data to the Flask backend
+    fetch('/calculate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(result => {
+        // Display the result
+        document.getElementById('result').textContent = `Your estimated carbon footprint is ${result.carbon_footprint.toFixed(2)} kg CO2 per month.`;
+    })
+    .catch(error => {
+        // Display an error message
+        console.error('Error:', error);
+        document.getElementById('result').textContent = 'An error occurred while calculating the carbon footprint. Please try again.';
+    });
 });
-
-function calculateCarbonFootprint(miles, diet, energy) {
-    let dietFactor;
-    
-    // Assign a diet factor based on the user's diet type
-    switch (diet) {
-        case 'meat':
-            dietFactor = 150;
-            break;
-        case 'vegetarian':
-            dietFactor = 100;
-            break;
-        case 'vegan':
-            dietFactor = 70;
-            break;
-    }
-
-    // Example calculations for carbon emissions (simplified):
-    // - Each mile driven emits approximately 0.4 kg of CO2
-    // - Diet type emits different amounts of CO2 per month (dummy numbers)
-    // - Energy usage emits 0.5 kg CO2 per kWh (can adjust this based on real data)
-
-    const drivingFootprint = miles * 0.4 * 30;  // Assume 30 days in a month
-    const dietFootprint = dietFactor;
-    const energyFootprint = energy * 0.5;
-
-    // Total carbon footprint (in kg CO2 per month)
-    return drivingFootprint + dietFootprint + energyFootprint;
-}
